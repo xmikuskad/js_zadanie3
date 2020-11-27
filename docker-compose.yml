@@ -1,0 +1,18 @@
+version: '3.7'
+services:
+  server_service:
+    depends_on:
+      - 'mydb'
+    build:
+      context: .
+    ports:
+      - 8085:8080
+    restart: on-failure
+
+  mydb:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+    container_name: mydb
