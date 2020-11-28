@@ -2,6 +2,7 @@ import React, {useRef,useState} from 'react';
 
 function AdminTableItem(obj) {
     const [isPaid, setPaid] = useState(obj.state);
+
     const paidBtn = useRef(null);
 
     return (
@@ -21,20 +22,14 @@ function AdminTableItem(obj) {
 
     function formatState()
     {
-        if(obj.state ===0)
+        if(isPaid ===0)
             return 'Nezaplatene'
         else
             return 'Zaplatene'
     }
 
-    function setAsPaid()
-    {
-        return;
-
-        if(paidBtn.current)
-            paidBtn.current.parentNode.removeChild(paidBtn)
-
-        fetch('https://mywebsite.com/endpoint/', {
+    function setAsPaid() {
+        fetch('/payOrder', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -45,13 +40,13 @@ function AdminTableItem(obj) {
             })
         })
             .then(data => {
-                console.log('DONE')
+                setPaid(1);
             })
     }
 
     function createPaidButton()
     {
-        if(obj.state === 0)
+        if(isPaid === 0)
         {
             return (
                 <td>

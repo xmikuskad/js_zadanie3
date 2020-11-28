@@ -1,35 +1,35 @@
 import React, {useEffect, useState} from 'react';
 
-function ThankYouPage() {
+function ThankYouPage(obj) {
     const [image, setImage] = useState('');
 
-    useEffect(()=>{
+    useEffect(() => {
         fetch('/getAdBanner')
             .then(res => res.json())
             .then(data => {
                 setImage(data);
-                setIsLoaded(true);
             });
-    },[]);
+    }, []);
 
 
     function callIncrement() {
         fetch('/increment')
             .then(data => {
-                window.open('https://www.google.com','_blank');
+                window.open('https://www.google.com', '_blank');
             })
     }
 
-    if(image !== '') {
+    if (image !== '') {
         return (
             <div>
-                <p>Thank you for your order!</p>
-                    <input type='image' src={image} onClick={() => {
-                        callIncrement();
-                    }}/>
+                <h1>Dakujeme za Vasu objednavku!</h1>
+                <button onClick={()=>obj.setPage(0)}>Navrat na hlavnu stranku</button>
+                <br/><br/>
+                <input type='image' src={image} onClick={() => {
+                    callIncrement();
+                }}/>
             </div>)
-    }
-    else {
+    } else {
         return (<div>Loading...</div>)
     }
 }

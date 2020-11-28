@@ -6,13 +6,12 @@ import ThankYouPage from './ThankYouPage';
 import '../stylesheet.css';
 import AdminPage from "./AdminPage";
 
+var shoppingCart = [];
 function ProductPage() {
     const [products, setProduct] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [page,setPage] = useState(0);
     //Page su nasledovne - 0 product page,1 order page,2 thank you page, 3 admin page
-
-    var shoppingCart = [];
 
     useEffect(() => {
         fetch('/data')
@@ -32,13 +31,38 @@ function ProductPage() {
                 description={product.description}
                 image={product.image}
                 price={product.price}
-                test={addItemToCart}/>
+                addItem={addItemToCart}/>
         });
     }
 
-    function addItemToCart(id) {
-        shoppingCart.push(id);
-        console.log(shoppingCart);
+    function addItemToCart(product) {
+
+        var found = false;
+
+        for(var i=0;i<shoppingCart.length;i++)
+        {
+            if(shoppingCart[i].id === product.id) {
+                shoppingCart[i].count++;
+                found = true;
+                break;
+            }
+        }
+
+        if(!found) {
+            shoppingCart.push(product);
+        }
+    }
+
+    function openOrderMenu()
+    {
+        if(shoppingCart.length<=0)
+        {
+            alert("Nakupny kosik je prazdny!");
+        }
+        else
+        {
+            setPage(1)
+        }
     }
 
     switch (page) {
@@ -46,7 +70,7 @@ function ProductPage() {
             if (isLoaded) {
                 return (
                     <div>
-                        <button onClick={() => setPage(1)}>
+                        <button onClick={() => openOrderMenu()}>
                             Nakupny kosik
                         </button>
                         <button onClick={() => setPage(3)}>
@@ -66,16 +90,20 @@ function ProductPage() {
         case 1: {
             return (
                 <OrderPage
-                    shoppingCart={shoppingCart}
+                    cart={shoppingCart}
                     setPage={setPage}
                 />
             );
         }
         case 2: {
-            return <ThankYouPage/>
+            return <ThankYouPage
+                setPage={setPage}
+                />
         }
         case 3: {
-            return <AdminPage/>
+            return <AdminPage
+                setPage={setPage}
+            />
         }
         default:
         {

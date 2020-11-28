@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import AdminTableItem from "./AdminTableItem";
 import '../stylesheet.css';
 
-function AdminPage() {
+function AdminPage(obj) {
     const [isLoaded, setIsLoaded] = useState(false);
     const [count, setCount] = useState(-1);
     const [orders, setOrders] = useState([]);
@@ -25,10 +25,10 @@ function AdminPage() {
     },[]);
 
     function getCount() {
-        if (count > 0) {
-            return (<p>Increment count is {count}</p>)
+        if (count >= 0) {
+            return (<p>Pocet klikov na pocitadlo je: {count}</p>)
         } else {
-            return (<p>Loading info...</p>)
+            return (<p>Loading...</p>)
         }
     }
 
@@ -47,12 +47,11 @@ function AdminPage() {
     if(isLoaded) {
         return (
             <div>
-                <p>Admin page!</p>
-                <p>Count area</p>
+                <h1>Admin stranka</h1>
+                <button onClick={()=>obj.setPage(0)}>Navrat na hlavnu stranku</button>
+                <h3>Stav pocitadla</h3>
                 {getCount()}
-                <p>Table area</p>
-                <p>{JSON.stringify(orders)}</p>
-
+                <h3>Tabulka vsetkych objednavok</h3>
                 <table className='adminTable'>
                     <thead>
                         <tr>

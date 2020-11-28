@@ -25,7 +25,7 @@ app.get('/data',(req,res)=>{
 });
 
 app.get('/getOrders',(req,res)=>{
-    connection.query('SELECT * FROM orders INNER JOIN users ON orders.user_id = users.id', function (error, results, fields) {
+    connection.query('SELECT * FROM orders JOIN users ON orders.user_id = users.id', function (error, results, fields) {
         if (error) throw error;
         res.json(results);
     });
@@ -46,15 +46,21 @@ app.get('/increment',(req,res)=>{
     res.end();
 });
 
-app.get('/payOrder',(req,res)=>{
-    console.log(req)
-    console.log(req.body)
-    res.end();
-});
-
 app.get('/getAdBanner',(req,res)=>{
     console.log('thank you called')
     res.json(AD_IMG);
+});
+
+//POST metody
+app.post('/payOrder',(req,res)=>{
+    console.log(req.body.id)
+    setOrderAsPaid(req.body.id)
+    res.end();
+});
+
+app.post('/createOrder',(req,res)=>{
+    checkUserAndCreateOrder(req.body.user,req.body.products,req.body.price)
+    res.end();
 });
 
 function setOrderAsPaid(order_id)
@@ -65,61 +71,46 @@ function setOrderAsPaid(order_id)
     });
 }
 
-function createOrder(user,products,price)
+function checkUserAndCreateOrder(user,products,price)
 {
-    var query = 'SELECT * FROM users WHERE name=?';
-    connection.query(query,[connection.escape(user.name)], function (error, results, fields) {
+    var query = 'SELECT * FROM users WHERE name=?;';
+    connection.query(query,[user.name], function (error, results, fields) {
         if (error) throw error;
-        console.log(results);
-        if(results.length <= 0)
-        {
+        console.log(results)
+        if(results.length <= 0) {
             //insert user
             var query = 'INSERT INTO users(name,street,city,street_num) VALUES (?,?,?,?);';
-            connection.query(query,[user.name,user.street,user.city,user.street_num], function (error, results, fields) {
+            connection.query(query, [user.name, user.street, user.city, user.street_num], function (error, results, fields) {
                 if (error) throw error;
-                var userId = results.insertId;
-
-                //create order
-                var query2 = 'INSERT INTO orders(user_id,price,state) VALUES (?,?,?);';
-                connection.query(query2,[userId,price,0], function (error, results, fields) {
-                    if (error) throw error;
-                    var orderId = results.insertId;
-
-
-                    for(let i=0; i<products.length; i++)
-                    {
-                        var query3 = 'INSERT INTO orders_products(order_id,product_id,count) VALUES (?,?,?);';
-                        connection.query(query3,[orderId,products[i][0],products[i][1]], function (error, results, fields) {
-                            if (error) throw error;
-                        });
-                    }
-
-                    console.log('ORDER CREATED!');
-
-                });
+                createOrder(products,price,results.insertId);
             });
         }
         else
         {
-            var id = results[0];
+            createOrder(products,price,results[0].id);
         }
     });
-
-    /*var query = 'SELECT * FROM products WHERE id=?';
-    connection.query(query,[id], function (error, results, fields) {
-        if (error) throw error;
-        return results[0];
-    });*/
 }
 
-function getItemByID(id)
+function createOrder(products,price,userId)
 {
-    var query = 'SELECT * FROM products WHERE id=?';
-    connection.query(query,[id], function (error, results, fields) {
+    //create order
+    var query2 = 'INSERT INTO orders(user_id,price,state) VALUES (?,?,?);';
+    connection.query(query2, [userId, price, 0], function (error, results, fields) {
         if (error) throw error;
-        return results[0];
-    });
+        var orderId = results.insertId;
 
+
+        for (let i = 0; i < products.length; i++) {
+            var query3 = 'INSERT INTO orders_products(order_id,product_id,count) VALUES (?,?,?);';
+            connection.query(query3, [orderId, products[i].id, products[i].count], function (error, results, fields) {
+                if (error) throw error;
+            });
+        }
+
+        console.log('ORDER CREATED!');
+
+    });
 }
 
 function addProduct(variables)
@@ -148,12 +139,6 @@ function seedProducts() {
     connection.query(query, function (error, results, fields) {
         if (error) throw error;
     });
-
-    //TODO zmazat testing
-    incrementCounter();
-    incrementCounter();
-    incrementCounter();
-
 
     var query = 'SELECT count FROM ad_counter WHERE id=1';
     connection.query(query, function (error, results, fields) {
@@ -289,7 +274,7 @@ function checkDBStatus() {
             });
 
             var user = {};
-            user.name='Fero2';
+            user.name='Fero';
             user.street="Kosovska";
             user.city="Prievidza";
             user.street_num = 10;
