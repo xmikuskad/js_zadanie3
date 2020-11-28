@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import Vsetky from './Components/Vsetky';
+import ProductPage from './Components/ProductPage';
 
 ReactDOM.render(
     <React.StrictMode>
-        <Vsetky />
+        <ProductPage />
     </React.StrictMode>,
     document.getElementById('root')
 );

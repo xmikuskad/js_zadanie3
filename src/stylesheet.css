@@ -1,0 +1,24 @@
+.productTable {
+    border-spacing:0 30px;
+}
+
+table.productTable td {
+    width: 300px;
+}
+
+.userFormTable {
+    border-spacing:0 10px;
+}
+
+table.userFormTable td {
+    width: 100px;
+}
+
+.adminTable {
+    border-spacing:0 5px;
+}
+
+table.adminTable td {
+    width: 200px;
+    text-align:center
+}
