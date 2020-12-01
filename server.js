@@ -26,7 +26,6 @@ app.use(express.static('public'));
 app.get('/data',(req,res)=>{
     connection.query('SELECT * FROM products', function (error, results, fields) {
         if (error) throw error;
-        console.log(JSON.stringify(results));
         res.json(results);
     });
 });
@@ -42,19 +41,16 @@ app.get('/getIncrement',(req,res)=>{
     var query = 'SELECT count FROM ad_counter WHERE id=1';
     connection.query(query, function (error, results, fields) {
         if (error) throw error;
-        console.log('count is after ' + results[0].count);
         res.json(results[0].count)
     });
 });
 
 app.get('/increment',(req,res)=>{
-    console.log('GOT INCREMENT')
     incrementCounter();
     res.end();
 });
 
 app.get('/getAdBanner',(req,res)=>{
-    console.log('thank you called')
     res.json({
         img:AD_IMG
     });
@@ -62,12 +58,12 @@ app.get('/getAdBanner',(req,res)=>{
 
 //POST metody
 app.post('/payOrder',(req,res)=>{
-    console.log(req.body.id)
     setOrderAsPaid(req.body.id)
     res.end();
 });
 
 app.post('/createOrder',(req,res)=>{
+
     checkUserAndCreateOrder(req.body.user,req.body.products,req.body.price)
     res.end();
 });
@@ -85,7 +81,6 @@ function checkUserAndCreateOrder(user,products,price)
     var query = 'SELECT * FROM users WHERE name=?;';
     connection.query(query,[user.name], function (error, results, fields) {
         if (error) throw error;
-        console.log(results)
         if(results.length <= 0) {
             //insert user
             var query = 'INSERT INTO users(name,street,city,street_num) VALUES (?,?,?,?);';
@@ -117,8 +112,6 @@ function createOrder(products,price,userId)
             });
         }
 
-        console.log('ORDER CREATED!');
-
     });
 }
 
@@ -140,19 +133,11 @@ function incrementCounter()
 }
 
 function seedProducts() {
-    console.log('starting to seed');
-
     //Nacitanie pocitadla
     var query = 'INSERT INTO ad_counter (count)\n' +
         'VALUES (0);';
     connection.query(query, function (error, results, fields) {
         if (error) throw error;
-    });
-
-    var query = 'SELECT count FROM ad_counter WHERE id=1';
-    connection.query(query, function (error, results, fields) {
-        if (error) throw error;
-        console.log('count is after ' + results[0].count);
     });
 
     //Zdroj informacii: https://www.progamingshop.sk
@@ -170,13 +155,6 @@ function seedProducts() {
     addProduct(['Diablo 3 [XBOX 360]', 'https://www.progamingshop.sk/images/data/product/diablo-3-xbox-360-217116.jpg', '14.99',
         'Absolútna RPG legenda prichádza po prvýkrát do sveta herných konzol! Kompletne redizajnovaná, aby poskytla dokonalý pôžitok aj bez použitia klávesnice a myši - ' +
         'Diablo III Vám poskytne herný zážitok, ako žiadna iná hra.']);
-
-    var testQuery = "SELECT * FROM products";
-    connection.query(testQuery, function (error, results, fields) {
-        if (error) throw error;
-        console.log(results);
-    });
-
 }
 
 function createDB() {
@@ -276,8 +254,6 @@ function checkDBStatus() {
         if(results === undefined)
             throw SQLException;
 
-        console.log(results)
-
         for (var i = 0; i < results.length; i++) {
             if (results[i].Database === DB_NAME) {
                 found = true;
@@ -286,10 +262,10 @@ function checkDBStatus() {
         }
 
         if (!found) {
-            console.log("Database not found")
+            console.log("Creating database")
             createDB();
         } else {
-            console.log('Database found');
+            console.log('Database already created');
 
             connection.end();
             connection = mysql.createConnection({
