@@ -1,16 +1,23 @@
+//Popis produktov, ceny a obrazky boli vsetky prebrate zo stranky https://www.progamingshop.sk/
+
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
 
+const HOST_ADDRESS = 'localhost';//pouzit 'mydb' pri dockeri
 const DB_NAME = "js_db";
-const AD_IMG = 'http://qnimate.com/wp-content/uploads/2014/03/images2.jpg';
+//const AD_IMG = 'http://qnimate.com/wp-content/uploads/2014/03/images2.jpg';
+const AD_IMG = 'https://www.progamingshop.sk/sys_img/ui/logo_responsive.svg';
+const port = 8080;
 
-var connection = mysql.createConnection({
-    host     : 'localhost', //pouzit 'mydb' pri dockeri
+const DB_CONFIG = {
+    host     : HOST_ADDRESS,
     user     : 'root',
     password : 'root'
-});
+};
+
+var connection = mysql.createConnection(DB_CONFIG);
 
 app.use(bodyParser.json());
 
@@ -48,7 +55,9 @@ app.get('/increment',(req,res)=>{
 
 app.get('/getAdBanner',(req,res)=>{
     console.log('thank you called')
-    res.json(AD_IMG);
+    res.json({
+        img:AD_IMG
+    });
 });
 
 //POST metody
@@ -65,7 +74,7 @@ app.post('/createOrder',(req,res)=>{
 
 function setOrderAsPaid(order_id)
 {
-    var query = 'UPDATE orders SET state=1 WHERE id=?';
+    var query = 'UPDATE orders SET state=1 WHERE order_id=?';
     connection.query(query,[order_id], function (error, results, fields) {
         if (error) throw error;
     });
@@ -146,10 +155,21 @@ function seedProducts() {
         console.log('count is after ' + results[0].count);
     });
 
-    addProduct(["meno1", "http://qnimate.com/wp-content/uploads/2014/03/images2.jpg", "100", "popis1"]);
-    addProduct(['meno2', 'http://qnimate.com/wp-content/uploads/2014/03/images2.jpg', '150', 'popis2']);
-    addProduct(["meno3", "http://qnimate.com/wp-content/uploads/2014/03/images2.jpg", "200", "popis3"]);
-    addProduct(['meno4', 'http://qnimate.com/wp-content/uploads/2014/03/images2.jpg', '250', 'popis4']);
+    //Zdroj informacii: https://www.progamingshop.sk
+    addProduct(["LEGO Marvel Super Heroes [XBOX 360]", "https://www.progamingshop.sk/images/data/product/lego-marvel-super-heroes-xbox-360-218463.jpg", "16.99",
+        "Marvelovský super-hrdinovia sa združujú, aby Vám poskytli nabitú lego-kocky rozbíjajúcu akciu! LEGO Marvel Super Heroes je prvá hra v úspešnej sérii LEGO, " +
+        "ktorá obsahuje slávne Marvel postavy!"]);
+    addProduct(['FIFA 14 CZ [XBOX 360]', 'https://www.progamingshop.sk/images/data/product/fifa-14-cz-xbox-360-211825.jpg', '17.99',
+        'Vďaka inováciám mnohonásobne oceneného herného systému Vás FIFA 14 vtiahne do diania a atmosféry okolo futbalového zápasu.']);
+    addProduct(["Red Dead Redemption [XBOX 360]", "https://www.progamingshop.sk/images/data/product/red-dead-redemption-xbox-360-39568.jpg", "14.99",
+        "Hra od známych tvorcov GTA sa odohráva na divokom západe, kde banda vyhnancov a kriminálnikov určuje vládou teroru tvrdé pravidlá"]);
+    addProduct(['Rayman Legends [XBOX 360]', 'https://www.progamingshop.sk/images/data/product/rayman-legends-xbox-360-212369.jpg', '17.99',
+        'Rayman, plošinovka roka a víťaz mnohých umeleckých a hudobných ocenení, prichádza s úplne novým dobrodružstvom.']);
+    addProduct(['Zaklínač 2: Vrahovia kráľov CZ (Rozšírená edícia) [XBOX 360]', 'https://www.progamingshop.sk/images/data/product/zaklinac-2-vrahovia-kralov-cz-rozsirena-edicia-xbox-360-203568.jpg',
+        '19.99', 'Druhý diel ságy o Zaklínačovi Geraltovi z Rivie predstavuje strhujúci a premyslený príbeh, ktorý definuje nové štandardy pre hry s nelineárnym dejom.']);
+    addProduct(['Diablo 3 [XBOX 360]', 'https://www.progamingshop.sk/images/data/product/diablo-3-xbox-360-217116.jpg', '14.99',
+        'Absolútna RPG legenda prichádza po prvýkrát do sveta herných konzol! Kompletne redizajnovaná, aby poskytla dokonalý pôžitok aj bez použitia klávesnice a myši - ' +
+        'Diablo III Vám poskytne herný zážitok, ako žiadna iná hra.']);
 
     var testQuery = "SELECT * FROM products";
     connection.query(testQuery, function (error, results, fields) {
@@ -181,11 +201,11 @@ function createDB() {
     db_create_string[5] = "DROP TABLE IF EXISTS `orders`;";
 
     db_create_string[6] = "CREATE TABLE `orders` (" +
-        "  `id` int NOT NULL AUTO_INCREMENT," +
+        "  `order_id` int NOT NULL AUTO_INCREMENT," +
         "  `user_id` int DEFAULT NULL," +
         "  `price` float NOT NULL," +
         "  `state` int DEFAULT NULL," +
-        "  PRIMARY KEY (`id`)," +
+        "  PRIMARY KEY (`order_id`)," +
         "  KEY `user_id_idx` (`user_id`)" +
         ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;";
 
@@ -209,7 +229,7 @@ function createDB() {
         "  PRIMARY KEY (`id`)," +
         "  KEY `order_id_idx` (`order_id`)," +
         "  KEY `product_id_idx` (`product_id`)," +
-        "  CONSTRAINT `order_id` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`)," +
+        "  CONSTRAINT `order_id` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`)," +
         "  CONSTRAINT `product_id` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)" +
         ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;";
 
@@ -233,7 +253,7 @@ function loadQueryWithWaiting(i,db_create_string)
         connection.end();
         //Pripojenie na spravnu db
         connection = mysql.createConnection({
-            host: 'localhost',
+            host: HOST_ADDRESS,
             user: 'root',
             password: 'root',
             database: DB_NAME
@@ -252,6 +272,12 @@ function loadQueryWithWaiting(i,db_create_string)
 function checkDBStatus() {
     connection.query('SHOW DATABASES;', function (error, results, fields) {
         var found = false;
+
+        if(results === undefined)
+            throw SQLException;
+
+        console.log(results)
+
         for (var i = 0; i < results.length; i++) {
             if (results[i].Database === DB_NAME) {
                 found = true;
@@ -267,7 +293,7 @@ function checkDBStatus() {
 
             connection.end();
             connection = mysql.createConnection({
-                host: 'localhost',
+                host: HOST_ADDRESS,
                 user: 'root',
                 password: 'root',
                 database: DB_NAME
@@ -289,8 +315,31 @@ function checkDBStatus() {
     });
 }
 
-app.listen(8080,()=>{
-    console.log('Started listening');
-    connection.connect();
-    checkDBStatus();
-});
+const attemptToConnect = function(callBack)
+{
+    connection = mysql.createConnection(DB_CONFIG);
+    connection.connect(err=>{
+        if(err)
+        {
+            console.error(err);
+            connection.end(err=>{
+                console.error('CLOSE ERROR!')
+            })
+            setTimeout(()=>{
+                attemptToConnect(callBack)
+            },15000)
+        }
+        else {
+            callBack();
+        }
+    })
+}
+
+attemptToConnect(()=>{
+    app.listen(port,()=>{
+        console.log('Connected to db, started listening');
+        checkDBStatus();
+    });
+})
+
+module.exports = app;

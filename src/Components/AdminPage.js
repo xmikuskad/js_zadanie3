@@ -36,7 +36,7 @@ function AdminPage(obj) {
         return orders.map((order, index) => {
             return <AdminTableItem
                 key={index}
-                id={order.id}
+                id={order.order_id}
                 name={order.name}
                 price={order.price}
                 state={order.state}
@@ -55,7 +55,8 @@ function AdminPage(obj) {
                 <table className='adminTable'>
                     <thead>
                         <tr>
-                            <th>Meno</th>
+                            <th>ID objednavky</th>
+                            <th>Zakaznik</th>
                             <th>Cena</th>
                             <th>Status</th>
                             <th></th>

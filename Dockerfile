@@ -5,4 +5,4 @@ RUN npm install
 COPY ./ ./
 RUN npm run-script build
 EXPOSE 8080
-CMD [ "node", "server.js" ]
+CMD ["node","server.js"]

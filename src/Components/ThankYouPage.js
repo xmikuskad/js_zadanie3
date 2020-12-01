@@ -2,12 +2,13 @@ import React, {useEffect, useState} from 'react';
 
 function ThankYouPage(obj) {
     const [image, setImage] = useState('');
+    const AD_LINK = 'https://www.progamingshop.sk/';
 
     useEffect(() => {
         fetch('/getAdBanner')
             .then(res => res.json())
             .then(data => {
-                setImage(data);
+                setImage(data.img);
             });
     }, []);
 
@@ -15,7 +16,7 @@ function ThankYouPage(obj) {
     function callIncrement() {
         fetch('/increment')
             .then(data => {
-                window.open('https://www.google.com', '_blank');
+                window.open(AD_LINK, '_blank');
             })
     }
 

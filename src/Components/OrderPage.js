@@ -46,28 +46,27 @@ function OrderPage(obj) {
         })
     }
 
-    /*
-                var user = {};
-            user.name='Fero';
-            user.street="Kosovska";
-            user.city="Prievidza";
-            user.street_num = 10;
-
-            var products = [[1,2],[2,1]];
-
-            //createOrder(user,products,100);
-
-            //setOrderAsPaid(1);
-     */
-
     function checkFields()
     {
-        //TODO
+        var nameValue = name.current.value;
+        var streetValue = street.current.value;
+        var cityValue =city.current.value;
+        var streetNumValue = streetNum.current.value;
+
+        if(nameValue.length <=0 || nameValue.length > 255 || streetValue.length <=0 || streetValue.length > 255 ||
+        cityValue.length <=0 || cityValue.length > 255 || streetNumValue.length <=0 || streetNumValue.length > 255)
+            return false;
+
+        return true;
     }
 
     function createOrder() {
 
-        checkFields()
+        if(!checkFields())
+        {
+            alert('Input fields are empty or bigger than 255 chars')
+            return;
+        }
 
         var user = {};
         user.name=name.current.value;
@@ -77,10 +76,12 @@ function OrderPage(obj) {
         var products = [];
         for(var i=0;i<obj.cart.length;i++)
         {
-            var product = {};
-            product.id = obj.cart[i].id;
-            product.count = obj.cart[i].count;
-            products.push(product);
+            if(obj.cart[i].count > 0) {
+                var product = {};
+                product.id = obj.cart[i].id;
+                product.count = obj.cart[i].count;
+                products.push(product);
+            }
         }
 
         fetch('/createOrder', {
@@ -97,8 +98,9 @@ function OrderPage(obj) {
         })
             .then(data => {
                 //Vycistit kosik
-                obj.cart.splice(0, obj.cart.length)
-                obj.setPage(2)
+                obj.cart.splice(0,obj.cart.length)
+                //obj.removeItem(0,obj.cart.length);
+                obj.setPage(2);
             })
     }
 
@@ -117,17 +119,16 @@ function OrderPage(obj) {
     }
 
     function updateItem(id, count) {
+
         for (var i = 0; i < obj.cart.length; i++) {
-            console.log(obj.cart[i].id)
             if (obj.cart[i].id === id) {
-                if (count > 0) {
-                    obj.cart[i].count = count;
-                    break;
-                } else {
-                    obj.cart[i].splice(i, 1);
-                }
+                console.log('Changing count from ' + obj.cart[i].count + " to " + count + " for ID " + id);
+                obj.cart[i].count = count;
+
+                break;
             }
         }
+
         updatePrice();
     }
 
@@ -138,7 +139,18 @@ function OrderPage(obj) {
             sum += obj.cart[i].count * obj.cart[i].price;
         }
 
+        sum = Math.round(sum * 100) / 100;
+
         setPrice(sum);
+
+        console.log('SUM IS '+sum);
+
+        if(sum<= Number.EPSILON)
+        {
+            obj.cart.splice(0,obj.cart.length)
+            alert('Prazdny nakupny kosik! Vraciam na hlavnu stranku')
+            obj.setPage(0);
+        }
     }
 
     return (

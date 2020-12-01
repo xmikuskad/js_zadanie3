@@ -28,7 +28,7 @@ function OrderItem(obj) {
                         </tr>
                         </tbody>
                     </table>
-                    <div>Cena spolu {obj.price * obj.count}</div>
+                    <div>Cena spolu {getPrice()}</div>
                 </td>
             </tr>
         );
@@ -39,8 +39,13 @@ function OrderItem(obj) {
     }
 
 
+    function getPrice()
+    {
+        return Math.round((obj.price * obj.count)* 100) / 100;
+    }
+
     function changeCount(increase) {
-        var countLocal = 0;
+        var countLocal = count;
 
         if (increase) {
             countLocal = count + 1;
@@ -49,13 +54,17 @@ function OrderItem(obj) {
                 if (confirm('Tymto vymazete produkt s kosika. Chcete pokracovat?')) {
                     countLocal = count - 1;
                 }
+                else
+                    return;
             } else {
                 countLocal = count - 1;
             }
         }
 
-        setCount(countLocal)
+        console.log('count is '+countLocal);
+
         obj.updateItem(obj.id, countLocal);
+        setCount(countLocal)
     }
 }
 

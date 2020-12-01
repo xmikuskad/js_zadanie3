@@ -8,6 +8,9 @@ function AdminTableItem(obj) {
     return (
         <tr>
             <td>
+                <p>{obj.id}</p>
+            </td>
+            <td>
                 <p>{obj.name}</p>
             </td>
             <td>

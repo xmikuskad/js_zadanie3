@@ -53,6 +53,13 @@ function ProductPage() {
         }
     }
 
+    function removeItemFromCart(position,count) {
+        console.log(position+" "+count);
+        console.log('LEN '+shoppingCart.length);
+        shoppingCart = shoppingCart.splice(position,count);
+        console.log('AFTER '+shoppingCart.length);
+    }
+
     function openOrderMenu()
     {
         if(shoppingCart.length<=0)
@@ -92,6 +99,7 @@ function ProductPage() {
                 <OrderPage
                     cart={shoppingCart}
                     setPage={setPage}
+                    removeItem={removeItemFromCart}
                 />
             );
         }
