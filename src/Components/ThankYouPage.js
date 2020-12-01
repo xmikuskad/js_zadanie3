@@ -1,9 +1,11 @@
 import React, {useEffect, useState} from 'react';
 
+//Stranka, ktora sa zobrazi po objednavke
 function ThankYouPage(obj) {
     const [image, setImage] = useState('');
     const AD_LINK = 'https://www.progamingshop.sk/';
 
+    //Ziskanie linku na obrazok
     useEffect(() => {
         fetch('/getAdBanner')
             .then(res => res.json())
@@ -12,7 +14,7 @@ function ThankYouPage(obj) {
             });
     }, []);
 
-
+    //Zvacsenie pocitadla a zobrazenie reklamy
     function callIncrement() {
         fetch('/increment')
             .then(data => {
@@ -20,6 +22,7 @@ function ThankYouPage(obj) {
             })
     }
 
+    //Vykreslenie html
     if (image !== '') {
         return (
             <div>

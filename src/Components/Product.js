@@ -1,8 +1,9 @@
 import React from 'react';
 
+//Jedna polozka v stranke produktov
 function Product(obj) {
 
-    var product = {};
+    const product = {};
     product.name = obj.name;
     product.id = obj.id;
     product.count = 1;

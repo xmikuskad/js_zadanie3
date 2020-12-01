@@ -1,23 +1,57 @@
-// Import the dependencies
-var chai = require('chai')
-var chaiHttp = require('chai-http')
+const chai = require('chai');
+const chaiHttp = require('chai-http');
 const mysql = require("mysql");
 const app = require('../server.js')
-// Configure Chai
+
 chai.use(chaiHttp)
 chai.should()
 
 const AD_IMG = 'https://www.progamingshop.sk/sys_img/ui/logo_responsive.svg';
+const HOST_ADDRESS = 'mydb';
 
 var connection;
 
+//Overovanie pripojenia k DB
 describe('Database connection test',() => {
-    before("Waiting 5 seconds for db seed",(done)=>{
-        setTimeout(done,5000);
+    before("Waiting for db to load",(done)=>{
+        setTimeout(()=>{waiter(done)},2000);
     })
+
+    //Pokus o pripojenie do DB, ak sa nepodari tak opakujeme kazdych 15 sec
+    //Pri dockeri sa vacsinou neporadi na prvych par pokusov
+    function waiter(done) {
+        try {
+            connection = mysql.createConnection({
+                host: HOST_ADDRESS,
+                user: 'root',
+                password: 'root',
+                database: 'js_db'
+            });
+            connection.connect();
+            connection.query('SELECT 1', function (error, results, fields) {
+                if (error) {
+                    setTimeout(() => {
+                        waiter(done)
+                    }, 15000)
+                } else {
+                    done();
+                }
+
+            });
+
+        } catch (err) {
+            if (err) {
+                setTimeout(() => {
+                    waiter(done)
+                }, 15000)
+            }
+        }
+    }
+
+    //Pre istotu som pripojenie na DB pridal aj ako test, ktory by mal vzdy prejst
     it('Attempt to connect to DB', function (done) {
         connection = mysql.createConnection({
-            host: 'localhost',
+            host: HOST_ADDRESS,
             user: 'root',
             password: 'root',
             database: 'js_db'
@@ -26,7 +60,9 @@ describe('Database connection test',() => {
     });
 })
 
+//Zaciatocne testy s pocitadlom a ziskanym linkom, nie su asi az tak podstatne
 describe('Initial tests', () => {
+    //Cakanie ak DB nie je vytvorena a treba naseedovat produkty
     before("Waiting 1s for load of db", (done) => {
         setTimeout(done, 1000);
     })
@@ -43,7 +79,9 @@ describe('Initial tests', () => {
                 }
             })
     })
+
     let counterValue = 0;
+    //Testovanie, ci inkrement pocitadla funguje tak ako ma
     it('Increment testing', done => {
 
         //Ziskanie aktualneho stavu pocitadla
@@ -75,9 +113,9 @@ describe('Initial tests', () => {
                         })
                 }
             })
+        //Po teste musime vratit pocitadlo na povodnu hodnotu
         after('Zmena pocitadla na povodnu hodnotu po teste',done => {
-            //Navrat pocitadla do povodneho stavu
-            var query = 'UPDATE ad_counter SET count=? WHERE id=1';
+            const query = 'UPDATE ad_counter SET count=? WHERE id=1';
             connection.query(query, [counterValue], function (error, results, fields) {
                 if (error) throw error;
                 done()
@@ -86,19 +124,20 @@ describe('Initial tests', () => {
     })
 })
 
+//Testovanie procesu objednavky
 describe('Order testing', () => {
-    var order_id;
-    var user_id;
+    let order_id;
+    let user_id;
 
     //Vytvorenie testovacich dat
-    var user = {};
+    const user = {};
     user.name = "FerkoMrkvicka123";
     user.street = "NahodnaUlica";
     user.city = "Prievidza";
     user.street_num = 11;
 
-    var price = 11;
-    var products = [
+    const price = 111;
+    const products = [
         {
             id: 1,
             count: 2
@@ -113,7 +152,8 @@ describe('Order testing', () => {
         }
     ];
 
-    it('Should make order', done => {
+    //Testovanie komplet vytvorenia objednavky s produktami
+    it('Order and user creation', done => {
         chai
             .request(app)
             .post('/createOrder')
@@ -130,6 +170,7 @@ describe('Order testing', () => {
             })
     })
 
+    //Nastavenie objednavky ako zaplatenej a jej kontrola
     it('Set order as paid', done => {
         chai
             .request(app)
@@ -143,14 +184,17 @@ describe('Order testing', () => {
                     setTimeout(()=>{CheckIfPayed(done)},100);
                 }
             })
+
+        //Vymazanie pridanych dat po testovani
         after('Clearing data from test',done=>{
             ClearData(done);
         })
     })
 
+    //Overenie, ci sa objednavka naozaj nastavila ako zaplatena
     function CheckIfPayed(done)
     {
-        var query = 'SELECT * FROM orders WHERE order_id=?';
+        const query = 'SELECT * FROM orders WHERE order_id=?';
         connection.query(query,[order_id] ,function (error, results, fields) {
             if (error) throw error;
             results.length.should.equal(1);
@@ -160,10 +204,10 @@ describe('Order testing', () => {
         });
     }
 
+    //Overenie pridania objednavky v DB
     function CheckResults(done) {
-
         //Overenie, ci pridalo pouzivatela
-        var query = 'SELECT * FROM users WHERE name=?;';
+        const query = 'SELECT * FROM users WHERE name=?;';
         connection.query(query,[user.name], function (error, results, fields) {
             if (error) throw error;
             results.length.should.equal(1);
@@ -174,7 +218,7 @@ describe('Order testing', () => {
             user_id = results[0].id;
 
             //Overenie, ci pridalo objednavku
-            var query2 = 'SELECT * FROM orders WHERE user_id=?;';
+            const query2 = 'SELECT * FROM orders WHERE user_id=?;';
             connection.query(query2,[results[0].id], function (error2, results2, fields2) {
                 if (error2) throw error;
                 results2.length.should.equal(1);
@@ -184,9 +228,10 @@ describe('Order testing', () => {
 
                 order_id = results2[0].order_id;
 
+                //Overenie, ci pridalo produkty objednavky
                 for(let i=0; i<products.length; i++)
                 {
-                    var query3 = 'SELECT * FROM orders_products WHERE order_id=? AND product_id=?; AND count=?';
+                    const query3 = 'SELECT * FROM orders_products WHERE order_id=? AND product_id=?; AND count=?';
                     connection.query(query3,[order_id,products[i].id,products[i].count], function (error3, results3, fields3) {
                         if (error2) throw error;
                         results2.length.should.equal(1);
@@ -201,18 +246,20 @@ describe('Order testing', () => {
         });
     }
 
+    //Vycistenie pridaneho pouzivatela, objednavky a produktov k objednavke
     function ClearData(done)
     {
-        var query = 'DELETE FROM orders_products WHERE order_id = ?';
+        const query = 'DELETE FROM orders_products WHERE order_id = ?';
         connection.query(query,[order_id] ,function (error, results, fields) {
             if (error) throw error;
-            var query = 'DELETE FROM orders WHERE order_id = ?';
+            const query = 'DELETE FROM orders WHERE order_id = ?';
             connection.query(query,[order_id] ,function (error, results, fields) {
                 if (error) throw error;
-                var query = 'DELETE FROM users WHERE id = ?';
+                const query = 'DELETE FROM users WHERE id = ?';
                 connection.query(query,[user_id] ,function (error, results, fields) {
                     if (error) throw error;
                     done()
+                    connection.end();
                 });
             });
         });

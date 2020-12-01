@@ -6,13 +6,17 @@ import ThankYouPage from './ThankYouPage';
 import '../stylesheet.css';
 import AdminPage from "./AdminPage";
 
+//Tu sa ukladaju vsetky aktualne polozky v kosiku
 var shoppingCart = [];
+
+//Hlavna stranka so vsetkymi produktami
 function ProductPage() {
     const [products, setProduct] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [page,setPage] = useState(0);
     //Page su nasledovne - 0 product page,1 order page,2 thank you page, 3 admin page
+    const [page, setPage] = useState(0);
 
+    //Ziskanie produktov z DB
     useEffect(() => {
         fetch('/data')
             .then(res => res.json())
@@ -22,6 +26,7 @@ function ProductPage() {
             });
     }, []);
 
+    //Namapovanie ziskanych produktov
     function renderProducts() {
         return products.map((product, index) => {
             return <Product
@@ -35,43 +40,34 @@ function ProductPage() {
         });
     }
 
+    //Pridanie polozky do nakupneho kosiku
     function addItemToCart(product) {
+        let found = false;
 
-        var found = false;
-
-        for(var i=0;i<shoppingCart.length;i++)
-        {
-            if(shoppingCart[i].id === product.id) {
+        for (let i = 0; i < shoppingCart.length; i++) {
+            if (shoppingCart[i].id === product.id) {
                 shoppingCart[i].count++;
                 found = true;
                 break;
             }
         }
 
-        if(!found) {
+        if (!found) {
             shoppingCart.push(product);
         }
     }
 
-    function removeItemFromCart(position,count) {
-        console.log(position+" "+count);
-        console.log('LEN '+shoppingCart.length);
-        shoppingCart = shoppingCart.splice(position,count);
-        console.log('AFTER '+shoppingCart.length);
-    }
-
-    function openOrderMenu()
-    {
-        if(shoppingCart.length<=0)
-        {
+    //Otvorenie stranku objednavky ak nie je kosik prazdny
+    function openOrderMenu() {
+        if (shoppingCart.length <= 0) {
             alert("Nakupny kosik je prazdny!");
-        }
-        else
-        {
+        } else {
             setPage(1)
         }
     }
 
+    //Otvorenie stranky na zaklade aktualnej premennej
+    //Page su nasledovne - 0 product page,1 order page,2 thank you page, 3 admin page
     switch (page) {
         case 0: {
             if (isLoaded) {
@@ -99,23 +95,21 @@ function ProductPage() {
                 <OrderPage
                     cart={shoppingCart}
                     setPage={setPage}
-                    removeItem={removeItemFromCart}
                 />
             );
         }
         case 2: {
             return <ThankYouPage
                 setPage={setPage}
-                />
+            />
         }
         case 3: {
             return <AdminPage
                 setPage={setPage}
             />
         }
-        default:
-        {
-            return <p>Nothing found!?</p>
+        default: {
+            return <p>Page not found. Try refreshing the page!</p>
         }
     }
 

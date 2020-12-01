@@ -1,5 +1,6 @@
 import React from 'react';
 
+//Vytvori input pole a nastavi jeho atributy
 function UserForm(obj) {
     return (
         <tr>
@@ -19,7 +20,6 @@ function UserForm(obj) {
         else
             return 'text';
     }
-
 }
 
 

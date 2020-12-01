@@ -1,10 +1,12 @@
 import React, {useRef,useState} from 'react';
 
+//Toto je jeden prvok tabulky v admin menu
 function AdminTableItem(obj) {
     const [isPaid, setPaid] = useState(obj.state);
 
     const paidBtn = useRef(null);
 
+    //Vytvorenie html elementu
     return (
         <tr>
             <td>
@@ -23,14 +25,15 @@ function AdminTableItem(obj) {
         </tr>
     );
 
-    function formatState()
-    {
-        if(isPaid ===0)
+    //Nastavenie textu stavu
+    function formatState() {
+        if (isPaid === 0)
             return 'Nezaplatene'
         else
             return 'Zaplatene'
     }
 
+    //Nastavenie danej objednavky ako zaplatenej
     function setAsPaid() {
         fetch('/payOrder', {
             method: 'POST',
@@ -47,18 +50,19 @@ function AdminTableItem(obj) {
             })
     }
 
-    function createPaidButton()
-    {
-        if(isPaid === 0)
-        {
+    //Vytvorenie tlacidla na zaplatenie objednavky
+    function createPaidButton() {
+        if (isPaid === 0) {
             return (
                 <td>
-                    <button ref={paidBtn} onClick={()=>{setAsPaid()}}>Oznacit ako zaplatenu</button>
+                    <button ref={paidBtn} onClick={() => {
+                        setAsPaid()
+                    }}>Oznacit ako zaplatenu
+                    </button>
                 </td>
             )
         }
     }
 }
-
 
 export default AdminTableItem;

@@ -5,4 +5,7 @@ RUN npm install
 COPY ./ ./
 RUN npm run-script build
 EXPOSE 8080
-CMD ["node","server.js"]
+#Kedze chcem aby sa vzdy pri spusteni vykonal test
+CMD ["npm","test"]
+#Ak by som chcel spustenie bez testu tak by som pouzil toto
+# CMD["node","server.js"]

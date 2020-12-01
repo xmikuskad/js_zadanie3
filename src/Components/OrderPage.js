@@ -3,14 +3,17 @@ import React, {useEffect, useState,useRef} from 'react';
 import UserForm from "./UserForm";
 import OrderItem from "./OrderItem";
 
+//Stranka kde pouzivatel plati a kontroluje objednavku
 function OrderPage(obj) {
     const [price, setPrice] = useState(0)
 
+    //Referencie na input polia
     const name = useRef(null);
     const street = useRef(null);
     const streetNum = useRef(null);
     const city = useRef(null);
 
+    //Definovanie input poli
     var formFields = [
         {
             ref: name,
@@ -30,11 +33,12 @@ function OrderPage(obj) {
             text: 'Mesto'
         }];
 
-
+    //Vypocitanie ceny na zaciatku programu
     useEffect(() => {
         updatePrice();
     }, [])
 
+    //Vytvorenie input poli pomocou namapovania na UserForm
     function renderUserForm() {
         return formFields.map((field, index) => {
             return <UserForm
@@ -46,6 +50,8 @@ function OrderPage(obj) {
         })
     }
 
+    //Overovanie poli sme nemali robit ale tak som spravil aspon zakladny test
+    //Polia nemozu byt prazdne alebo mat nad 255 znakov (limit DB)
     function checkFields()
     {
         var nameValue = name.current.value;
@@ -60,14 +66,17 @@ function OrderPage(obj) {
         return true;
     }
 
+    //Vytvorenie objednavky a odoslanie requestu na server
     function createOrder() {
 
+        //Kontrola poli
         if(!checkFields())
         {
-            alert('Input fields are empty or bigger than 255 chars')
+            alert('Niektore polia su prazdne alebo maju nad 255 znakov')
             return;
         }
 
+        //Vytvorenie odosielanych dat
         var user = {};
         user.name=name.current.value;
         user.street=street.current.value;
@@ -84,6 +93,7 @@ function OrderPage(obj) {
             }
         }
 
+        //Volanie na server
         fetch('/createOrder', {
             method: 'POST',
             headers: {
@@ -97,13 +107,14 @@ function OrderPage(obj) {
             })
         })
             .then(data => {
-                //Vycistit kosik
+                //Vycistit kosik od aktualnych itemov
                 obj.cart.splice(0,obj.cart.length)
-                //obj.removeItem(0,obj.cart.length);
+                //Zobrazie thankyou page
                 obj.setPage(2);
             })
     }
 
+    //Zobrazenie objektov v nakupnom kosiku pomocou namapovania
     function renderOrderItems() {
         return obj.cart.map((item, index) => {
             return <OrderItem
@@ -118,11 +129,10 @@ function OrderPage(obj) {
         })
     }
 
+    //Zmena poctu polozky v kosiku a update ceny
     function updateItem(id, count) {
-
         for (var i = 0; i < obj.cart.length; i++) {
             if (obj.cart[i].id === id) {
-                console.log('Changing count from ' + obj.cart[i].count + " to " + count + " for ID " + id);
                 obj.cart[i].count = count;
 
                 break;
@@ -132,19 +142,20 @@ function OrderPage(obj) {
         updatePrice();
     }
 
+    //Aktualizacia ceny objednavky
     function updatePrice() {
-        var sum = 0;
+        let sum = 0;
 
-        for (var i = 0; i < obj.cart.length; i++) {
+        for (let i = 0; i < obj.cart.length; i++) {
             sum += obj.cart[i].count * obj.cart[i].price;
         }
 
+        //Zaokruhlovanie lebo obcas sa to bugne pri floatoch
         sum = Math.round(sum * 100) / 100;
 
         setPrice(sum);
 
-        console.log('SUM IS '+sum);
-
+        //Ak sme odstranili vsetky itemy z kosika tak navrat na stranku produktu
         if(sum<= Number.EPSILON)
         {
             obj.cart.splice(0,obj.cart.length)
@@ -153,6 +164,7 @@ function OrderPage(obj) {
         }
     }
 
+    //Vytvorenie html
     return (
         <div>
             <button onClick={() => obj.setPage(0)}>Navrat na hlavnu stranku</button>

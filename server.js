@@ -1,20 +1,32 @@
 //Popis produktov, ceny a obrazky boli vsetky prebrate zo stranky https://www.progamingshop.sk/
 
+/**
+ * Premenne a ich inicializacia
+ *
+ */
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
 
-const HOST_ADDRESS = 'localhost';//pouzit 'mydb' pri dockeri
-const DB_NAME = "js_db";
-//const AD_IMG = 'http://qnimate.com/wp-content/uploads/2014/03/images2.jpg';
+const HOST_ADDRESS = 'mydb';//pouzit 'mydb' pri dockeri
+const DB_NAME = 'js_db';
 const AD_IMG = 'https://www.progamingshop.sk/sys_img/ui/logo_responsive.svg';
 const port = 8080;
 
+//Konfiguracia pripojenia na mysql
 const DB_CONFIG = {
     host     : HOST_ADDRESS,
     user     : 'root',
     password : 'root'
+};
+
+//Konfiguracia pripojenia na konkretnu mysql databazu
+const DB_TABLE_CONFIG = {
+    host: HOST_ADDRESS,
+    user: 'root',
+    password: 'root',
+    database: DB_NAME
 };
 
 var connection = mysql.createConnection(DB_CONFIG);
@@ -23,90 +35,112 @@ app.use(bodyParser.json());
 
 app.use(express.static('public'));
 
+/**
+ * Express volania
+ * GET requesty
+ */
+
+//Vrati JSON so vsetkymi produktami v DB
 app.get('/data',(req,res)=>{
-    connection.query('SELECT * FROM products', function (error, results, fields) {
+    connection.query('SELECT * FROM products', function (error, results) {
         if (error) throw error;
         res.json(results);
     });
 });
 
+//Vrati JSON so vsetkymi objednavkami
 app.get('/getOrders',(req,res)=>{
-    connection.query('SELECT * FROM orders JOIN users ON orders.user_id = users.id', function (error, results, fields) {
+    connection.query('SELECT * FROM orders JOIN users ON orders.user_id = users.id', function (error, results) {
         if (error) throw error;
         res.json(results);
     });
 });
 
+//Vrati stav pocitadla
 app.get('/getIncrement',(req,res)=>{
-    var query = 'SELECT count FROM ad_counter WHERE id=1';
-    connection.query(query, function (error, results, fields) {
+    const query = 'SELECT count FROM ad_counter WHERE id=1';
+    connection.query(query, function (error, results) {
         if (error) throw error;
         res.json(results[0].count)
     });
 });
 
+//Inkrementuje pocitadlo
 app.get('/increment',(req,res)=>{
     incrementCounter();
     res.end();
 });
 
+//Vrati link na obrazok reklamy
 app.get('/getAdBanner',(req,res)=>{
     res.json({
         img:AD_IMG
     });
 });
 
-//POST metody
+/**
+ * Express volania
+ * POST requesty
+ */
+
+//Oznaci objednavku za zaplatenu
 app.post('/payOrder',(req,res)=>{
     setOrderAsPaid(req.body.id)
     res.end();
 });
 
+//Vytvori objednavku
 app.post('/createOrder',(req,res)=>{
-
     checkUserAndCreateOrder(req.body.user,req.body.products,req.body.price)
     res.end();
 });
 
-function setOrderAsPaid(order_id)
-{
-    var query = 'UPDATE orders SET state=1 WHERE order_id=?';
-    connection.query(query,[order_id], function (error, results, fields) {
+/**
+ * Volania query na DB
+ *
+ */
+
+//Volanie na DB, zmeni stav objednavky z 0 na 1
+function setOrderAsPaid(order_id) {
+    const query = 'UPDATE orders SET state=1 WHERE order_id=?';
+    connection.query(query, [order_id], function (error, results, fields) {
         if (error) throw error;
     });
 }
 
-function checkUserAndCreateOrder(user,products,price)
-{
-    var query = 'SELECT * FROM users WHERE name=?;';
-    connection.query(query,[user.name], function (error, results, fields) {
+//Vytvorenie uzivatela a objednavky v DB
+function checkUserAndCreateOrder(user,products,price) {
+    //Kontrola, ci pouzivatel existuje
+    const query = 'SELECT * FROM users WHERE name=?;';
+    connection.query(query, [user.name], function (error, results, fields) {
         if (error) throw error;
-        if(results.length <= 0) {
-            //insert user
-            var query = 'INSERT INTO users(name,street,city,street_num) VALUES (?,?,?,?);';
+        if (results.length <= 0) {
+            //Ak pouzivatel neexistuje tak ho vytvorime
+            const query = 'INSERT INTO users(name,street,city,street_num) VALUES (?,?,?,?);';
             connection.query(query, [user.name, user.street, user.city, user.street_num], function (error, results, fields) {
                 if (error) throw error;
-                createOrder(products,price,results.insertId);
+                //Vytvorenie objednavky
+                createOrder(products, price, results.insertId);
             });
-        }
-        else
-        {
-            createOrder(products,price,results[0].id);
+
+        } else {
+            //Vytvorenie objednavky
+            createOrder(products, price, results[0].id);
         }
     });
 }
 
-function createOrder(products,price,userId)
-{
-    //create order
-    var query2 = 'INSERT INTO orders(user_id,price,state) VALUES (?,?,?);';
+//Vytvorenie objednavky v DB
+function createOrder(products,price,userId) {
+    //Vlozenie objednavky do DB
+    const query2 = 'INSERT INTO orders(user_id,price,state) VALUES (?,?,?);';
     connection.query(query2, [userId, price, 0], function (error, results, fields) {
         if (error) throw error;
-        var orderId = results.insertId;
+        const orderId = results.insertId;
 
-
+        //Vlozenie produktov k objednavke
         for (let i = 0; i < products.length; i++) {
-            var query3 = 'INSERT INTO orders_products(order_id,product_id,count) VALUES (?,?,?);';
+            const query3 = 'INSERT INTO orders_products(order_id,product_id,count) VALUES (?,?,?);';
             connection.query(query3, [orderId, products[i].id, products[i].count], function (error, results, fields) {
                 if (error) throw error;
             });
@@ -115,26 +149,34 @@ function createOrder(products,price,userId)
     });
 }
 
+//Pridanie produktu (pouzivane pri seedovani DB)
 function addProduct(variables)
 {
-    var query = 'INSERT INTO products (name, image, price, description)\n' +
+    const query = 'INSERT INTO products (name, image, price, description)\n' +
         'VALUES (?,?,?,?);';
     connection.query(query,variables, function (error, results, fields) {
         if (error) throw error;
     });
 }
 
-function incrementCounter()
-{
-    var query = 'UPDATE ad_counter SET count=count+1 WHERE id=1';
+//Zvacsenie pocitadla o 1
+function incrementCounter() {
+    const query = 'UPDATE ad_counter SET count=count+1 WHERE id=1';
     connection.query(query, function (error, results, fields) {
         if (error) throw error;
     });
 }
 
+/***
+ * Funkcie na inicializovanie, pripojenie a kontrolu DB
+ *
+ */
+
+//Vytvorenie zaciatocnych produktov a ich ulozenie do DB
+//Taktiez vytvara pocitadlo a inicializuje ho na 0
 function seedProducts() {
     //Nacitanie pocitadla
-    var query = 'INSERT INTO ad_counter (count)\n' +
+    const query = 'INSERT INTO ad_counter (count)\n' +
         'VALUES (0);';
     connection.query(query, function (error, results, fields) {
         if (error) throw error;
@@ -157,6 +199,7 @@ function seedProducts() {
         'Diablo III Vám poskytne herný zážitok, ako žiadna iná hra.']);
 }
 
+//Vytvorenie databazy aj tabuliek
 function createDB() {
     const db_create_string = [];
 
@@ -224,37 +267,35 @@ function createDB() {
 }
 
 //Aby som zarucil, ze sa najskor vytvoria tabulky a az potom sa do nich nacitaju udaje
-function loadQueryWithWaiting(i,db_create_string)
-{
-    if(i >= db_create_string.length)
-    {
+//Skaredy workaround okolo asynchronnych metod pomocou rekurzie
+//Vytvara tabulky a ked su vsetky hotove tak ich seeduje udajmi
+function loadQueryWithWaiting(i,db_create_string) {
+    if (i >= db_create_string.length) {
+        //Zrusenie stareho pripojenia
         connection.end();
-        //Pripojenie na spravnu db
-        connection = mysql.createConnection({
-            host: HOST_ADDRESS,
-            user: 'root',
-            password: 'root',
-            database: DB_NAME
-        });
+        //Pripojenie na prave vytvorenu DB
+        connection = mysql.createConnection(DB_TABLE_CONFIG);
         seedProducts();
-    }
-    else {
+    } else {
+        //Vytvorenie DB a tabuliek
         connection.query(db_create_string[i], function (error, results, fields) {
             if (error) throw error;
             console.log('Initializing table ' + (i + 1) + "/" + db_create_string.length);
-            loadQueryWithWaiting(i+1,db_create_string);
+            loadQueryWithWaiting(i + 1, db_create_string);
         });
     }
 }
 
+//Overenie, ci DB je vytvorena alebo ju treba vytvorit
 function checkDBStatus() {
     connection.query('SHOW DATABASES;', function (error, results, fields) {
-        var found = false;
+        let found = false;
 
-        if(results === undefined)
+        if (results === undefined)
             throw SQLException;
 
-        for (var i = 0; i < results.length; i++) {
+        //Zistenie, ci meno DB existuje
+        for (let i = 0; i < results.length; i++) {
             if (results[i].Database === DB_NAME) {
                 found = true;
                 break;
@@ -268,38 +309,22 @@ function checkDBStatus() {
             console.log('Database already created');
 
             connection.end();
-            connection = mysql.createConnection({
-                host: HOST_ADDRESS,
-                user: 'root',
-                password: 'root',
-                database: DB_NAME
-            });
-
-            var user = {};
-            user.name='Fero';
-            user.street="Kosovska";
-            user.city="Prievidza";
-            user.street_num = 10;
-
-            var products = [[1,2],[2,1]];
-
-            //createOrder(user,products,100);
-
-            //setOrderAsPaid(1);
+            connection = mysql.createConnection(DB_TABLE_CONFIG);
         }
-
     });
 }
 
+//Opakovane pripojenie na DB dokym neuspejeme
+//Prevazne inspirovane kodom, ktory ste nam ukazali na cviceniach
 const attemptToConnect = function(callBack)
 {
     connection = mysql.createConnection(DB_CONFIG);
     connection.connect(err=>{
         if(err)
         {
-            console.error(err);
+            console.error("Database connection ERROR! Retrying in 15 sec...");
             connection.end(err=>{
-                console.error('CLOSE ERROR!')
+                console.error('Failed to close the connection');
             })
             setTimeout(()=>{
                 attemptToConnect(callBack)
@@ -311,6 +336,7 @@ const attemptToConnect = function(callBack)
     })
 }
 
+//Vytvorenie serveru po uspesnej konekcii na DB
 attemptToConnect(()=>{
     app.listen(port,()=>{
         console.log('Connected to db, started listening');
@@ -318,4 +344,5 @@ attemptToConnect(()=>{
     });
 })
 
+//Aby som mohol server pouzit pri testoch
 module.exports = app;
